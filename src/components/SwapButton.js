@@ -9,7 +9,7 @@ import {
 import SwapHoriz from '@material-ui/icons/SwapHoriz';
 import PopupState, { bindTrigger, bindPopover } from 'material-ui-popup-state';
 import Swap from '@project-serum/swap-ui';
-import { Provider } from '@project-serum/anchor';
+import { AnchorProvider as Provider } from '@coral-xyz/anchor';
 import { TokenListContainer } from '@solana/spl-token-registry';
 import { useTokenInfos } from '../utils/tokens/names';
 import { useSendTransaction } from '../utils/notifications';
@@ -117,22 +117,14 @@ function SwapButtonPopover({ size }) {
 }
 
 class NotifyingProvider extends Provider {
-  constructor(
-    connection,
-    wallet,
-    sendTransaction,
-  ) {
+  constructor(connection, wallet, sendTransaction) {
     super(connection, wallet, {
       commitment: 'recent',
     });
     this.sendTransaction = sendTransaction;
   }
 
-  async send(
-    tx,
-    signers,
-    opts,
-  ) {
+  async send(tx, signers, opts) {
     return new Promise((onSuccess, onError) => {
       this.sendTransaction(super.send(tx, signers, opts), {
         onSuccess,
@@ -141,10 +133,7 @@ class NotifyingProvider extends Provider {
     });
   }
 
-  async sendAll(
-    txs,
-    opts,
-  ) {
+  async sendAll(txs, opts) {
     return new Promise(async (resolve, onError) => {
       let txSigs = [];
       for (const tx of txs) {

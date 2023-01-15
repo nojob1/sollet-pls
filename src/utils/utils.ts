@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Keypair, Connection, PublicKey } from '@solana/web3.js';
+import { Keypair, Connection, PublicKey, AccountInfo } from '@solana/web3.js';
 import { useMediaQuery } from '@material-ui/core';
 import * as bs58 from 'bs58';
 
 export async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 
 export function useLocalStorageState<T>(
   key: string,
@@ -110,9 +109,39 @@ export const decodeAccount = (privateKey: string) => {
       return undefined;
     }
   }
-}
+};
 
 // shorten the checksummed version of the input address to have 4 characters at start and end
 export function shortenAddress(address: string, chars = 4): string {
   return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+}
+
+export async function getFilteredProgramAccounts(
+  connection: Connection,
+  programId: PublicKey,
+  filters,
+): Promise<{ publicKey: PublicKey; accountInfo: AccountInfo<Buffer> }[]> {
+  // @ts-ignore
+  const resp = await connection._rpcRequest('getProgramAccounts', [
+    programId.toBase58(),
+    {
+      commitment: connection.commitment,
+      filters,
+      encoding: 'base64',
+    },
+  ]);
+  if (resp.error) {
+    throw new Error(resp.error.message);
+  }
+  return resp.result.map(
+    ({ pubkey, account: { data, executable, owner, lamports } }) => ({
+      publicKey: new PublicKey(pubkey),
+      accountInfo: {
+        data: Buffer.from(data[0], 'base64'),
+        executable,
+        owner: new PublicKey(owner),
+        lamports,
+      },
+    }),
+  );
 }

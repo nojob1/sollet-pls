@@ -4,10 +4,10 @@ import {
   getHashedName,
   getNameAccountKey,
   NameRegistryState,
-  getFilteredProgramAccounts,
   NAME_PROGRAM_ID,
   getDNSRecordAddress,
 } from '@bonfida/spl-name-service';
+import { getFilteredProgramAccounts } from '../utils';
 import { useConnection } from '../connection';
 import { useWallet } from '../wallet';
 import BN from 'bn.js';
@@ -51,7 +51,7 @@ export const resolveDomainName = async (
     ? await getDNSRecordAddress(parent, domainName)
     : await getNameKey(domainName);
   try {
-    const registry = await NameRegistryState.retrieve(connection, key);
+    const { registry } = await NameRegistryState.retrieve(connection, key);
     return registry.owner.toBase58();
   } catch (err) {
     console.warn(err);
@@ -93,12 +93,15 @@ export async function performReverseLookup(
     centralState,
   );
 
-  let name = await NameRegistryState.retrieve(connection, reverseLookupAccount);
-  if (!name.data) {
+  let { registry } = await NameRegistryState.retrieve(
+    connection,
+    reverseLookupAccount,
+  );
+  if (!registry.data) {
     throw new Error('Could not retrieve name data');
   }
-  let nameLength = new BN(name.data.slice(0, 4), 'le').toNumber();
-  return name.data.slice(4, 4 + nameLength).toString();
+  let nameLength = new BN(registry.data.slice(0, 4), 'le').toNumber();
+  return registry.data.slice(4, 4 + nameLength).toString();
 }
 
 export const useUserDomains = () => {
